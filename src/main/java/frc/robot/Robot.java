@@ -39,7 +39,6 @@ public class Robot extends TimedRobot {
   
   private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 2);
 
- 
   int leftBump2 = 0;
   int aBut = 0;
   int xBut = 0;
@@ -47,8 +46,11 @@ public class Robot extends TimedRobot {
   int yBut = 0;
   int rightBump = 0;
   int leftBump = 0;
+  double leftTriggerGas = 0;
+  double rightTriggerGas = 0;
+  double totalGas;
   
-
+  
   @Override
   public void robotInit() {}
   @Override
@@ -67,7 +69,11 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void teleopPeriodic() {
-    m_myRobot.arcadeDrive(m_driverController.getLeftX(), m_driverController.getLeftY());
+    double leftTriggerGas = m_driverController.getLeftTriggerAxis()*.5;
+    double rightTriggerGas = m_driverController.getRightTriggerAxis()*.5;
+    double totalGas = leftTriggerGas + rightTriggerGas;
+    m_myRobot.arcadeDrive(m_driverController.getLeftX(), m_driverController.getLeftY()*totalGas);
+    
     int leftBump2 = (m_driver2Controller.getLeftBumper()) ? 1 : 0;
     int aBut = (m_driver2Controller.getAButton()) ? 1 : 0;
     int xBut = (m_driver2Controller.getXButton()) ? 1 : 0;
