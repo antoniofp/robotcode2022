@@ -89,5 +89,6 @@ public class Robot extends TimedRobot {
       doubleSolenoid.set(DoubleSolenoid.Value.kForward);
     } else if (m_driver2Controller.getPOV() == 180) {
       doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
+    }
   }
 }
