@@ -1,43 +1,35 @@
 
 package frc.robot;
-import edu.wpi.first.wpilibj.TimedRobot;
-
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
-
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
 public class Robot extends TimedRobot {
-  private final int frontleftMotorID = 1;
-  private final int backleftMotorID = 2;
-  private final int frontrightMotorID = 3;
-  private final int backrightMotorID = 4;
-  private final int shooterID = 5;
-  private final int intakeID = 6;
-  private final int feederID = 7;
-  private final int rightClibmerID = 8;
-  private final int leftClimberID = 9;
   private final XboxController m_driverController = new XboxController(0);
   private final XboxController m_driver2Controller = new XboxController(1);
-  private CANSparkMax m_frontleftMotor = new CANSparkMax(frontleftMotorID, MotorType.kBrushless);
-  private CANSparkMax m_backleftMotor = new CANSparkMax(backleftMotorID, MotorType.kBrushless);
-  private CANSparkMax m_frontrightMotor = new CANSparkMax(frontrightMotorID, MotorType.kBrushless);
-  private CANSparkMax m_backrightMotor = new CANSparkMax(backrightMotorID, MotorType.kBrushless);
-  private CANSparkMax shooter = new CANSparkMax(shooterID, MotorType.kBrushless);
-  private CANSparkMax intake = new CANSparkMax (intakeID, MotorType.kBrushless);
-  private CANSparkMax feeder = new CANSparkMax (feederID, MotorType.kBrushless);
-  private CANSparkMax rightClimber = new CANSparkMax (rightClibmerID, MotorType.kBrushless);
-  private CANSparkMax leftClimber = new CANSparkMax (leftClimberID, MotorType.kBrushless);
+  private CANSparkMax m_frontleftMotor = new CANSparkMax(1, MotorType.kBrushless);
+  private CANSparkMax m_backleftMotor = new CANSparkMax(2, MotorType.kBrushless);
+  private CANSparkMax m_frontrightMotor = new CANSparkMax(3, MotorType.kBrushless);
+  private CANSparkMax m_backrightMotor = new CANSparkMax(4, MotorType.kBrushless);
+  private CANSparkMax shooter = new CANSparkMax(5, MotorType.kBrushless);
+  private CANSparkMax intake = new CANSparkMax (6, MotorType.kBrushless);
+  private CANSparkMax feeder = new CANSparkMax (7, MotorType.kBrushless);
+  private CANSparkMax rightClimber = new CANSparkMax (8, MotorType.kBrushless);
+  private CANSparkMax leftClimber = new CANSparkMax (9, MotorType.kBrushless);
   private final MotorControllerGroup leftMotors = new MotorControllerGroup(m_frontleftMotor, m_backleftMotor);
   private final MotorControllerGroup rightMotors = new MotorControllerGroup(m_frontrightMotor, m_backrightMotor);
   DifferentialDrive m_myRobot = new DifferentialDrive(rightMotors, leftMotors);
-  
-  private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 2);
+
+  private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
 
   int leftBump2 = 0;
   int aBut = 0;
@@ -50,9 +42,20 @@ public class Robot extends TimedRobot {
   double rightTriggerGas = 0;
   double totalGas;
   
-  
   @Override
-  public void robotInit() {}
+  public void robotInit() {
+    CameraServer.startAutomaticCapture();
+    doubleSolenoid.set(Value.kReverse);
+    leftClimber.follow(rightClimber);
+    leftClimber.stopMotor();
+    rightClimber.stopMotor();
+    m_backleftMotor.setIdleMode(IdleMode.kBrake);
+    m_frontleftMotor.setIdleMode(IdleMode.kBrake);
+    m_backrightMotor.setIdleMode(IdleMode.kBrake);
+    m_frontrightMotor.setIdleMode(IdleMode.kBrake);
+    leftClimber.setIdleMode(IdleMode.kBrake);
+    rightClimber.setIdleMode(IdleMode.kBrake);
+  }
   @Override
   public void robotPeriodic() {}
 
@@ -87,9 +90,7 @@ public class Robot extends TimedRobot {
     feeder.set(bBut*0.7);
     feeder.set(yBut*-0.2);
     rightClimber.set(rightBump*0.4);
-    leftClimber.set(rightBump*.4);
     rightClimber.set(leftBump*-0.8);
-    leftClimber.set(leftBump*-0.8);
 
     if (m_driver2Controller.getPOV() == 0) {
       doubleSolenoid.set(DoubleSolenoid.Value.kForward);
