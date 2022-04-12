@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
   private final XboxController m_driverController = new XboxController(0);
@@ -33,22 +34,11 @@ public class Robot extends TimedRobot {
   // Create encoder objects 
   RelativeEncoder leftEncoder = m_frontleftMotor.getEncoder();
   RelativeEncoder rightEncoder = m_frontrightMotor.getEncoder();
+  RelativeEncoder rightClimbEncoder = rightClimber.getEncoder();
+  RelativeEncoder shootEncoder = shooter.getEncoder();
+  RelativeEncoder feederEncoder = feeder.getEncoder();
   // Create solenoid object
   private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
-
-  // Variables for the state of buttons. By default is 0, when pressed it will change to 1
-  int leftBump2 = 0;
-  int aBut = 0;
-  int xBut = 0;
-  int bBut = 0;
-  int yBut = 0;
-  int rightBump = 0;
-  int leftBump = 0;
-  // Variables for speed control
-  double leftTriggerGas = 0;
-  double rightTriggerGas = 0;
-  double totalGas;
-
   
   @Override
   public void robotInit() {
@@ -60,15 +50,47 @@ public class Robot extends TimedRobot {
     rightClimber.stopMotor(); 
   }
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    SmartDashboard.putNumber("Left Drivetrain Encoder", leftEncoder.getPosition());
+    SmartDashboard.putNumber("Right Drivetrain Encoder", rightEncoder.getPosition());
+  }
 
   @Override
   public void autonomousInit() {
     // Set encoder positions to zero
     leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+    shootEncoder.setPosition(0);
+    feederEncoder.setPosition(0);
+    m_backleftMotor.setIdleMode(IdleMode.kBrake);
+    m_frontleftMotor.setIdleMode(IdleMode.kBrake);
+    m_backrightMotor.setIdleMode(IdleMode.kBrake);
+    m_frontrightMotor.setIdleMode(IdleMode.kBrake);
   }
   @Override
   public void autonomousPeriodic() {
+    // Calculate average distance of both drivetrain sides
+    double distance = (leftEncoder.getPosition() + rightEncoder.getPosition())/2;
+    if (distance<10) {
+      m_myRobot.tankDrive(-.7, -.7);
+    }
+    else {
+      // accelerate shooter for 10 rotations to reach full speed
+      while (shootEncoder.getPosition()<10 ) {
+        shooter.set(0.8);
+      }
+      // keep shooter spinning and activate feeder for 5 rotations
+      while (feederEncoder.getPosition()<5) {
+      shooter.set(0.8);
+      feeder.set(.7);
+      } 
+    }
+    leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+    shootEncoder.setPosition(0);
+    if (distance<5){
+      m_myRobot.tankDrive(-.7, -.7);
+    }
   }
 
   @Override
