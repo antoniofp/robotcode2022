@@ -4,6 +4,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxRelativeEncoder.Type;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -32,11 +33,11 @@ public class Robot extends TimedRobot {
   // Create object for drive train
   DifferentialDrive m_myRobot = new DifferentialDrive(rightMotors, leftMotors);
   // Create encoder objects 
-  RelativeEncoder leftEncoder = m_frontleftMotor.getEncoder();
-  RelativeEncoder rightEncoder = m_frontrightMotor.getEncoder();
-  RelativeEncoder rightClimbEncoder = rightClimber.getEncoder();
-  RelativeEncoder shootEncoder = shooter.getEncoder();
-  RelativeEncoder feederEncoder = feeder.getEncoder();
+  RelativeEncoder leftEncoder =  m_frontleftMotor.getEncoder(Type.kHallSensor, 42);
+  RelativeEncoder rightEncoder = m_frontrightMotor.getEncoder(Type.kHallSensor, 42);
+  RelativeEncoder rightClimbEncoder = rightClimber.getEncoder(Type.kHallSensor, 42);
+  RelativeEncoder shootEncoder = shooter.getEncoder(Type.kHallSensor, 42);
+  RelativeEncoder feederEncoder = feeder.getEncoder(Type.kHallSensor, 42);
   // Create solenoid object
   private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
   
@@ -44,7 +45,7 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     CameraServer.startAutomaticCapture();
     //keep intake up by default
-    doubleSolenoid.set(Value.kReverse);
+    doubleSolenoid.set(Value.kForward);
     leftClimber.follow(rightClimber);
     leftClimber.stopMotor();
     rightClimber.stopMotor(); 
@@ -53,6 +54,8 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     SmartDashboard.putNumber("Left Drivetrain Encoder", leftEncoder.getPosition());
     SmartDashboard.putNumber("Right Drivetrain Encoder", rightEncoder.getPosition());
+    SmartDashboard.putNumber("Shooter Temp", shooter.getMotorTemperature());
+    SmartDashboard.putNumber("Intake Temp", intake.getMotorTemperature());
   }
 
   @Override
@@ -88,6 +91,7 @@ public class Robot extends TimedRobot {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
     shootEncoder.setPosition(0);
+    // once robot has shoot, move out of tarmac doing 5 rotations
     if (distance<5){
       m_myRobot.tankDrive(-.7, -.7);
     }
@@ -120,12 +124,12 @@ public class Robot extends TimedRobot {
     int leftBump = (m_driverController.getLeftBumper()) ? 1 : 0;
     // Speeds for motors are set multiplying a predetermined value by the state of the button
     shooter.set((leftBump2*0.8));
-    intake.set(aBut*0.8);
-    intake.set(xBut*-0.3);
-    feeder.set(bBut*0.7);
-    feeder.set(yBut*-0.2);
-    rightClimber.set(rightBump*0.4);
-    rightClimber.set(leftBump*-0.8);
+    intake.set(aBut*0.8 + xBut*0.3);
+    //intake.set(xBut*-0.3);
+    feeder.set(bBut*0.7 + yBut*-.2);
+    //feeder.set(yBut*-0.2);
+    rightClimber.set(rightBump*0.4 + leftBump*-0.8);
+    //rightClimber.set(leftBump*-0.8);
     // Intake is lowered or elevated with D-Pad
     if (m_driver2Controller.getPOV() == 0) {
       doubleSolenoid.set(DoubleSolenoid.Value.kForward);
