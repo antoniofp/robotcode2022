@@ -52,9 +52,10 @@ public class Robot extends TimedRobot {
   }
   @Override
   public void robotPeriodic() {
-    SmartDashboard.putNumber("Left Drivetrain Encoder", leftEncoder.getPosition());
-    SmartDashboard.putNumber("Right Drivetrain Encoder", rightEncoder.getPosition());
+    SmartDashboard.putNumber("Left Wheels Pos", leftEncoder.getPosition());
+    SmartDashboard.putNumber("Right Wheels Pos", rightEncoder.getPosition());
     SmartDashboard.putNumber("Shooter Temp", shooter.getMotorTemperature());
+    SmartDashboard.putNumber("Climber Pos", rightClimbEncoder.getPosition());
     SmartDashboard.putNumber("Intake Temp", intake.getMotorTemperature());
   }
 
@@ -114,25 +115,22 @@ public class Robot extends TimedRobot {
     double totalGas = leftTriggerGas + rightTriggerGas;
     // Take value of x and y coordinates from left joystick to control speed and rotation of drivetrain
     m_myRobot.arcadeDrive(m_driverController.getLeftX()*totalGas, m_driverController.getLeftY()*totalGas);
-    // Compact if statement to determine if a button is being pressed
-    int leftBump2 = (m_driver2Controller.getLeftBumper()) ? 1 : 0;
-    int aBut = (m_driver2Controller.getAButton()) ? 1 : 0;
-    int xBut = (m_driver2Controller.getXButton()) ? 1 : 0;
-    int bBut = (m_driver2Controller.getBButton()) ? 1 : 0;
-    int yBut = (m_driver2Controller.getYButton()) ? 1 : 0;
-    int rightBump = (m_driverController.getRightBumper()) ? 1 : 0;
-    int leftBump = (m_driverController.getLeftBumper()) ? 1 : 0;
-    // Speeds for motors are set multiplying a predetermined value by the state of the button
-    shooter.set((leftBump2*0.8));
-    intake.set(aBut*0.8 + xBut*0.3);
-    //intake.set(xBut*-0.3);
-    feeder.set(bBut*0.7 + yBut*-.2);
-    //feeder.set(yBut*-0.2);
-    rightClimber.set(rightBump*0.4 + leftBump*-0.8);
-    //rightClimber.set(leftBump*-0.8);
-    // Intake is lowered or elevated with D-Pad
+    // Compact if statement to asign speed values to each button
+    double shooterSpeed = (m_driver2Controller.getLeftBumper()) ? 0.8 : 0;
+    double intakeSpeed = (m_driver2Controller.getAButton()) ? 0.8 : 0;
+    double reverseIntakeSpeed = (m_driver2Controller.getXButton()) ? -0.3 : 0;
+    double feederSpeed = (m_driver2Controller.getBButton()) ? 0.7 : 0;
+    double reverseFeederSpeed = (m_driver2Controller.getYButton()) ? -0.2 : 0;
+    double climbUpSpeed = (m_driverController.getRightBumper()) ? 0.4 : 0;
+    double climbDownSpeed = (m_driverController.getLeftBumper()) ? -0.8 : 0;
+    // Speeds for motors are set using the previous variables
+    shooter.set(shooterSpeed);
+    intake.set(intakeSpeed + reverseIntakeSpeed);
+    feeder.set(feederSpeed + reverseFeederSpeed);
+    rightClimber.set(climbUpSpeed + climbDownSpeed);
+    // Intake is lowered or elevated with D-Pad on controller
     if (m_driver2Controller.getPOV() == 0) {
-      doubleSolenoid.set(DoubleSolenoid.Value.kForward);
+    doubleSolenoid.set(DoubleSolenoid.Value.kForward);
     } else if (m_driver2Controller.getPOV() == 180) {
       doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
     }
