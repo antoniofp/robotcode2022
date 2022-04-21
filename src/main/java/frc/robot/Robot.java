@@ -26,25 +26,15 @@ public class Robot extends TimedRobot {
 // Creating objects for controllers
   private final XboxController m_driverController = new XboxController(0);
   private final XboxController m_driver2Controller = new XboxController(1);
-//Creating objects for chassis motors
-  private CANSparkMax m_frontleftMotor = new CANSparkMax(1, MotorType.kBrushless);
-  private CANSparkMax m_backleftMotor = new CANSparkMax(2, MotorType.kBrushless);
-  private CANSparkMax m_frontrightMotor = new CANSparkMax(3, MotorType.kBrushless);
-  private CANSparkMax m_backrightMotor = new CANSparkMax(4, MotorType.kBrushless);
-//Grouping Left chassis motors and right chassis motors
-  private final MotorControllerGroup leftMotors = new MotorControllerGroup(m_frontleftMotor, m_backleftMotor);
-  private final MotorControllerGroup rightMotors = new MotorControllerGroup(m_frontrightMotor, m_backrightMotor);
 //Creating objects for mechanims motors
   private CANSparkMax shooter = new CANSparkMax(5, MotorType.kBrushless);
   private CANSparkMax intake = new CANSparkMax (6, MotorType.kBrushless);
   private CANSparkMax feeder = new CANSparkMax (7, MotorType.kBrushless);
   private CANSparkMax leftClimber = new CANSparkMax (8, MotorType.kBrushless);
   private CANSparkMax rightClimber = new CANSparkMax (9, MotorType.kBrushless);
-// Create object for drive train
-  DifferentialDrive m_myRobot = new DifferentialDrive(rightMotors, leftMotors);
+//Create chassis object
+  Drivetrain drivetrain = new Drivetrain();
 // Create encoder objects 
-  RelativeEncoder leftEncoder =  m_frontleftMotor.getEncoder(Type.kHallSensor, 42);
-  RelativeEncoder rightEncoder = m_frontrightMotor.getEncoder(Type.kHallSensor, 42);
   RelativeEncoder rightClimbEncoder = rightClimber.getEncoder(Type.kHallSensor, 42);
   RelativeEncoder leftClimbEncoder = leftClimber.getEncoder(Type.kHallSensor, 42);
   RelativeEncoder shootEncoder = shooter.getEncoder(Type.kHallSensor, 42);
@@ -61,10 +51,9 @@ public class Robot extends TimedRobot {
     leftClimber.stopMotor();
     rightClimber.stopMotor(); 
   }
+
   @Override
   public void robotPeriodic() { //Class used all time
-    SmartDashboard.putNumber("Left Wheels Pos", leftEncoder.getPosition());
-    SmartDashboard.putNumber("Right Wheels Pos", rightEncoder.getPosition());
     SmartDashboard.putNumber("Shooter Temp", shooter.getMotorTemperature());
     SmartDashboard.putNumber("Climber L", rightClimbEncoder.getPosition());
     SmartDashboard.putNumber("Intake Temp", intake.getMotorTemperature());
@@ -72,60 +61,28 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() { //Class used when the autonomous period is initializated
-// Set encoder positions to zero
-    leftEncoder.setPosition(0);
-    rightEncoder.setPosition(0);
-    shootEncoder.setPosition(0);
-    feederEncoder.setPosition(0);
-    m_backleftMotor.setIdleMode(IdleMode.kBrake);
-    m_frontleftMotor.setIdleMode(IdleMode.kBrake);
-    m_backrightMotor.setIdleMode(IdleMode.kBrake);
-    m_frontrightMotor.setIdleMode(IdleMode.kBrake);
   }
+
   @Override
   public void autonomousPeriodic() { //Class used during the autonomous period
-// Calculate average distance of both drivetrain sides
-    double distance = (leftEncoder.getPosition() + rightEncoder.getPosition())/2;
-    if (distance<10) {
-      m_myRobot.tankDrive(-.7, -.7);
-    }
-    else {
-  // accelerate shooter for 10 rotations to reach full speed
-      while (shootEncoder.getPosition()<10 ) {
-        shooter.set(0.8);
-      }
-  // keep shooter spinning and activate feeder for 5 rotations
-      while (feederEncoder.getPosition()<5) {
-      shooter.set(0.8);
-      feeder.set(.7);
-      } 
-    }
-    leftEncoder.setPosition(0);
-    rightEncoder.setPosition(0);
-    shootEncoder.setPosition(0);
-  // once robot has shoot, move out of tarmac doing 5 rotations
-    if (distance<5){
-      m_myRobot.tankDrive(-.7, -.7);
-    }
   }
 
   @Override
   public void teleopInit() { //Class used when the teleoperated period is initializated
-    m_backleftMotor.setIdleMode(IdleMode.kBrake);
-    m_frontleftMotor.setIdleMode(IdleMode.kBrake);
-    m_backrightMotor.setIdleMode(IdleMode.kBrake);
-    m_frontrightMotor.setIdleMode(IdleMode.kBrake);
+    drivetrain.brakeChassis();
     leftClimber.setIdleMode(IdleMode.kBrake);
     rightClimber.setIdleMode(IdleMode.kBrake);
   }
+
   @Override
-  public void teleopPeriodic() { //Class used during the teleoperated period 
+  public void teleopPeriodic() { 
 // Get values from triggers and add both to set multiplier for drivetrain speed
     double leftTriggerGas = m_driverController.getLeftTriggerAxis()*.5;
     double rightTriggerGas = m_driverController.getRightTriggerAxis()*.5;
     double totalGas = leftTriggerGas + rightTriggerGas;
 // Take value of x and y coordinates from left joystick to control speed and rotation of drivetrain
-    m_myRobot.arcadeDrive(m_driverController.getLeftX()*totalGas, m_driverController.getLeftY()*totalGas);
+    drivetrain.drive(m_driverController.getLeftX(), m_driverController.getLeftY(), totalGas );
+
 // Compact if statement to asign speed values to each button
     double shooterSpeed = (m_driver2Controller.getLeftBumper()) ? 0.8 : 0;
     double intakeSpeed = (m_driver2Controller.getAButton()) ? 0.8 : 0;
@@ -134,6 +91,7 @@ public class Robot extends TimedRobot {
     double reverseFeederSpeed = (m_driver2Controller.getYButton()) ? -0.2 : 0;
     double climbUpSpeed = (m_driverController.getRightBumper()) ? 0.4 : 0;
     double climbDownSpeed = (m_driverController.getLeftBumper()) ? -0.8 : 0;
+
 // Speeds for motors are set using the previous variables
     shooter.set(shooterSpeed);
     intake.set(intakeSpeed + reverseIntakeSpeed);
@@ -146,4 +104,10 @@ public class Robot extends TimedRobot {
       doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
     }
   }
+
+  @Override
+  public void disabledInit(){
+    drivetrain.coastChassis();
+  }
+
 }
