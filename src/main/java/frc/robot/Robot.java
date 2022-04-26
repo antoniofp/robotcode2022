@@ -52,7 +52,8 @@ public class Robot extends TimedRobot {
 // Create solenoid object
   final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
   final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
-  
+  // create object with autonomous routine (created in Autos.java file)
+  Autos firstAuto = new Autos();
   @Override
   public void robotInit() { //Class used when the robot is on
     CameraServer.startAutomaticCapture();
@@ -74,7 +75,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() { //Class used when the autonomous period is initializated
-// Set encoder positions to zero
+    // Set encoder positions to zero
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
     shootEncoder.setPosition(0);
@@ -83,34 +84,12 @@ public class Robot extends TimedRobot {
     m_frontleftMotor.setIdleMode(IdleMode.kBrake);
     m_backrightMotor.setIdleMode(IdleMode.kBrake);
     m_frontrightMotor.setIdleMode(IdleMode.kBrake);
+
   }
   @Override
   public void autonomousPeriodic() { //Class used during the autonomous period
-// Calculate average distance of both drivetrain sides
-    double distance = (leftEncoder.getPosition() + rightEncoder.getPosition())/2;
-    if (distance<10) {
-      m_myRobot.tankDrive(-.7, -.7);
-    }
-    else {
-  // accelerate shooter for 10 rotations to reach full speed
-      while (shootEncoder.getPosition()<10 ) {
-        shooter.set(0.8);
-      }
-  // keep shooter spinning and activate feeder for 5 rotations
-      while (feederEncoder.getPosition()<5) {
-      shooter.set(0.8);
-      feeder.set(.7);
-      } 
-    }
-    leftEncoder.setPosition(0);
-    rightEncoder.setPosition(0);
-    shootEncoder.setPosition(0);
-  // once robot has shoot, move out of tarmac doing 5 rotations
-    if (distance<5){
-      m_myRobot.tankDrive(-.7, -.7);
-    }
+    firstAuto.auto1();
   }
-
   @Override
   public void teleopInit() { //Class used when the teleoperated period is initializated
     m_backleftMotor.setIdleMode(IdleMode.kBrake);
