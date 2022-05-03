@@ -2,7 +2,6 @@
  * @author ToñoKUN JorgeMeco BrunoKUN
  * @Version 2.3
  * https://www.youtube.com/watch?v=dQw4w9WgXcQ
- * Java es bullshit
  * */ 
 
 package frc.robot;
@@ -13,6 +12,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxRelativeEncoder.Type;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -24,43 +24,43 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
 // Creating objects for controllers
-  private final XboxController m_driverController = new XboxController(0);
-  private final XboxController m_driver2Controller = new XboxController(1);
-//Creating objects for mechanims motors
-  private CANSparkMax shooter = new CANSparkMax(5, MotorType.kBrushless);
-  private CANSparkMax intake = new CANSparkMax (6, MotorType.kBrushless);
-  private CANSparkMax feeder = new CANSparkMax (7, MotorType.kBrushless);
-  private CANSparkMax leftClimber = new CANSparkMax (8, MotorType.kBrushless);
-  private CANSparkMax rightClimber = new CANSparkMax (9, MotorType.kBrushless);
-//Create chassis object
+  final XboxController m_driverController = new XboxController(0);
+  final XboxController m_driver2Controller = new XboxController(1);
+//Creating object for chassis
   Drivetrain drivetrain = new Drivetrain();
+//Creating objects for mechanims motors
+  CANSparkMax shooter = new CANSparkMax(5, MotorType.kBrushless);
+  CANSparkMax intake = new CANSparkMax (6, MotorType.kBrushless);
+  CANSparkMax feeder = new CANSparkMax (7, MotorType.kBrushless);
+  CANSparkMax leftClimber = new CANSparkMax (8, MotorType.kBrushless);
+  CANSparkMax rightClimber = new CANSparkMax (9, MotorType.kBrushless);
+
 // Create encoder objects 
   RelativeEncoder rightClimbEncoder = rightClimber.getEncoder(Type.kHallSensor, 42);
   RelativeEncoder leftClimbEncoder = leftClimber.getEncoder(Type.kHallSensor, 42);
-  RelativeEncoder shootEncoder = shooter.getEncoder(Type.kHallSensor, 42);
-  RelativeEncoder feederEncoder = feeder.getEncoder(Type.kHallSensor, 42);
+
 // Create solenoid object
-  private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
-  
+  final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
+  final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+
   @Override
   public void robotInit() { //Class used when the robot is on
     CameraServer.startAutomaticCapture();
-//keep intake up by default
+  //keep intake up by default
     doubleSolenoid.set(Value.kForward);
     rightClimber.follow(leftClimber);
     leftClimber.stopMotor();
     rightClimber.stopMotor(); 
+    leftClimbEncoder.setPosition(0);
   }
 
   @Override
-  public void robotPeriodic() { //Class used all time
-    SmartDashboard.putNumber("Shooter Temp", shooter.getMotorTemperature());
-    SmartDashboard.putNumber("Climber L", rightClimbEncoder.getPosition());
-    SmartDashboard.putNumber("Intake Temp", intake.getMotorTemperature());
+  public void robotPeriodic() {
   }
 
   @Override
   public void autonomousInit() { //Class used when the autonomous period is initializated
+    drivetrain.brakeChassis();
   }
 
   @Override
@@ -72,6 +72,7 @@ public class Robot extends TimedRobot {
     drivetrain.brakeChassis();
     leftClimber.setIdleMode(IdleMode.kBrake);
     rightClimber.setIdleMode(IdleMode.kBrake);
+    leftClimbEncoder.setPosition(0);
   }
 
   @Override
@@ -80,8 +81,9 @@ public class Robot extends TimedRobot {
     double leftTriggerGas = m_driverController.getLeftTriggerAxis()*.5;
     double rightTriggerGas = m_driverController.getRightTriggerAxis()*.5;
     double totalGas = leftTriggerGas + rightTriggerGas;
+
 // Take value of x and y coordinates from left joystick to control speed and rotation of drivetrain
-    drivetrain.drive(m_driverController.getLeftX(), m_driverController.getLeftY(), totalGas );
+    drivetrain.drive(m_driverController.getLeftX(), m_driverController.getLeftY(), totalGas);
 
 // Compact if statement to asign speed values to each button
     double shooterSpeed = (m_driver2Controller.getLeftBumper()) ? 0.8 : 0;
@@ -92,16 +94,36 @@ public class Robot extends TimedRobot {
     double climbUpSpeed = (m_driverController.getRightBumper()) ? 0.4 : 0;
     double climbDownSpeed = (m_driverController.getLeftBumper()) ? -0.8 : 0;
 
+// Enable lock mechanism when climber reaches 34 revolutions
+    boolean lockEnabled = false;
+    if (leftClimbEncoder.getPosition() >= 34) {
+      lockEnabled = true;
+    }
 // Speeds for motors are set using the previous variables
     shooter.set(shooterSpeed);
     intake.set(intakeSpeed + reverseIntakeSpeed);
     feeder.set(feederSpeed + reverseFeederSpeed);
-    leftClimber.set(climbUpSpeed + climbDownSpeed);
+    // if climber is within that range, it can move up or down
+    if (leftClimbEncoder.getPosition() >= 1 & leftClimbEncoder.getPosition() <=34) {
+      leftClimber.set(climbUpSpeed + climbDownSpeed);
+    } // if the climber is below 1, and lock is not enabled, it can only go up
+      else if (leftClimbEncoder.getPosition()<1 & !lockEnabled) {
+        leftClimber.set(climbUpSpeed);
+      // if climber lock gets enabled and it is below 34, it can move up or down, including below 0
+      } else if (lockEnabled & leftClimbEncoder.getPosition() < 34) {
+      leftClimber.set(climbDownSpeed + climbUpSpeed);
+      } else { // if the climber is not in the previous cases, it means it is above 34, so it must only go down
+      leftClimber.set(climbDownSpeed);
+    }
 // Intake is lowered or elevated with D-Pad on controller
     if (m_driver2Controller.getPOV() == 0) {
     doubleSolenoid.set(DoubleSolenoid.Value.kForward);
-    } else if (m_driver2Controller.getPOV() == 180) {
+    }
+    if (m_driver2Controller.getPOV() == 180) {
       doubleSolenoid.set(DoubleSolenoid.Value.kReverse);
+    }
+    if (m_driver2Controller.getRightBumperPressed()){
+      compressor.disable();
     }
   }
 
@@ -109,5 +131,4 @@ public class Robot extends TimedRobot {
   public void disabledInit(){
     drivetrain.coastChassis();
   }
-
 }

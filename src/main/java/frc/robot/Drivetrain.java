@@ -41,15 +41,4 @@ public class Drivetrain {
   public void drive(double x, double y, double gas){
     m_myRobot.arcadeDrive(x * gas, y * gas);
   }
-
-  public double rotateTo(double actualAngle, double desiredAngle){
-    double angle = 180;
-
-    return angle;
-  }
-
-  public void auto(){
-
-  }
-
 }
