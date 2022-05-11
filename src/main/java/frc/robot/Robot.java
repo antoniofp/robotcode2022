@@ -1,74 +1,73 @@
-/** 
- * @author ToñoKUN JorgeMeco BrunoKUN
- * @Version 2.3
- * https://www.youtube.com/watch?v=dQw4w9WgXcQ
- * */ 
 
 package frc.robot;
-//Importing libraries
+
+import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxRelativeEncoder.Type;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation;
 
 public class Robot extends TimedRobot {
-// Creating objects for controllers
   final XboxController m_driverController = new XboxController(0);
   final XboxController m_driver2Controller = new XboxController(1);
-//Creating object for chassis
+  //Creating object for chassis
   Drivetrain drivetrain = new Drivetrain();
-//Creating objects for mechanims motors
+  //Creating objects for mechanims motors
   CANSparkMax shooter = new CANSparkMax(5, MotorType.kBrushless);
   CANSparkMax intake = new CANSparkMax (6, MotorType.kBrushless);
   CANSparkMax feeder = new CANSparkMax (7, MotorType.kBrushless);
   CANSparkMax leftClimber = new CANSparkMax (8, MotorType.kBrushless);
   CANSparkMax rightClimber = new CANSparkMax (9, MotorType.kBrushless);
-
-// Create encoder objects 
+  // Encoders
   RelativeEncoder rightClimbEncoder = rightClimber.getEncoder(Type.kHallSensor, 42);
   RelativeEncoder leftClimbEncoder = leftClimber.getEncoder(Type.kHallSensor, 42);
-
-// Create solenoid object
+  // Solenoid valves
   final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1);
   final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
 
+  //PATHWEAVER
+  String trajectoryJSON = "paths/StraightBack.wpilib.json";
+  AHRS gyro = new AHRS(SPI.Port.kMXP);
+  Trajectory trajectory = new Trajectory();
+
   @Override
-  public void robotInit() { //Class used when the robot is on
+  public void robotInit() { 
+    
     CameraServer.startAutomaticCapture();
-  //keep intake up by default
-    doubleSolenoid.set(Value.kForward);
+    doubleSolenoid.set(Value.kForward); //keep intake up
     rightClimber.follow(leftClimber);
+
     leftClimber.stopMotor();
     rightClimber.stopMotor(); 
     leftClimbEncoder.setPosition(0);
   }
 
   @Override
-  public void robotPeriodic() {
-  }
-
-  @Override
-  public void autonomousInit() { //Class used when the autonomous period is initializated
+  public void autonomousInit() { 
     drivetrain.brakeChassis();
   }
 
   @Override
-  public void autonomousPeriodic() { //Class used during the autonomous period
+  public void autonomousPeriodic() {
   }
 
   @Override
-  public void teleopInit() { //Class used when the teleoperated period is initializated
+  public void teleopInit() { 
     drivetrain.brakeChassis();
     leftClimber.setIdleMode(IdleMode.kBrake);
     rightClimber.setIdleMode(IdleMode.kBrake);
@@ -77,9 +76,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() { 
-// Get values from triggers and add both to set multiplier for drivetrain speed
-    double leftTriggerGas = m_driverController.getLeftTriggerAxis()*.5;
-    double rightTriggerGas = m_driverController.getRightTriggerAxis()*.5;
+    double leftTriggerGas = m_driverController.getLeftTriggerAxis() *.5;
+    double rightTriggerGas = m_driverController.getRightTriggerAxis() *.5;
     double totalGas = leftTriggerGas + rightTriggerGas;
 
 // Take value of x and y coordinates from left joystick to control speed and rotation of drivetrain
@@ -115,7 +113,9 @@ public class Robot extends TimedRobot {
       } else { // if the climber is not in the previous cases, it means it is above 34, so it must only go down
       leftClimber.set(climbDownSpeed);
     }
-// Intake is lowered or elevated with D-Pad on controller
+
+
+    // Intake is lowered or elevated with D-Pad on controller
     if (m_driver2Controller.getPOV() == 0) {
     doubleSolenoid.set(DoubleSolenoid.Value.kForward);
     }
