@@ -1,4 +1,4 @@
-package frc.robot;
+package frc.robot.Subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
@@ -72,8 +72,9 @@ public class Drivetrain extends SubsystemBase {
   }
 
   //METHOD FOR TELEOPERATED
-  public void drive(double x, double y, double gas){
-    chassis.arcadeDrive(x * gas, y * gas);
+  public void drive(double x, double y, double triggerLeft, double triggerRight){
+      double gas = triggerLeft * 0.5 + triggerRight * 0.5;
+      chassis.arcadeDrive(x * gas, y * gas);
   }
 
   public Rotation2d getHeading() {
