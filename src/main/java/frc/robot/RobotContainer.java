@@ -11,9 +11,12 @@ import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Commands.CollectBalls;
 import frc.robot.Commands.DriveJoystickCmd;
+import frc.robot.Commands.FeedCmd;
 import frc.robot.Commands.IntakeToggleCmd;
+import frc.robot.Commands.ShootCmd;
 import frc.robot.Subsystems.Drivetrain;
 import frc.robot.Subsystems.IntakeSubsystem;
+import frc.robot.Subsystems.Shooter;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.geometry.Pose2d;
 
@@ -23,6 +26,7 @@ import java.util.Arrays;
 public class RobotContainer {
     private Drivetrain drivetrainSubsystem = new Drivetrain();
     private IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+    private Shooter shooterSubsystem = new Shooter();
     private final XboxController driverController = new XboxController(0);
     private final XboxController codriverController = new XboxController(1);
 
@@ -41,6 +45,9 @@ public class RobotContainer {
         new JoystickButton(driverController, 2).whileActiveOnce(new IntakeToggleCmd(intakeSubsystem, false));
         new JoystickButton(driverController, 3).whileActiveContinuous(new CollectBalls(intakeSubsystem, true));
         new JoystickButton(driverController, 4).whileActiveContinuous(new CollectBalls(intakeSubsystem, false));
+        new JoystickButton(codriverController, 1).whileActiveContinuous(new FeedCmd(intakeSubsystem, true));
+        new JoystickButton(codriverController, 2).whileActiveContinuous(new FeedCmd(intakeSubsystem, false));
+        new JoystickButton(codriverController, 6).whileActiveContinuous(new ShootCmd(shooterSubsystem));
     }
 
     //AUTO DRIVETRAIN
