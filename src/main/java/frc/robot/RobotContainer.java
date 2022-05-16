@@ -19,16 +19,20 @@ import frc.robot.Subsystems.IntakeSubsystem;
 import frc.robot.Subsystems.Shooter;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.geometry.Pose2d;
-
 import java.util.Arrays;
+import frc.robot.TrajectoryLoader;
+
 
 
 public class RobotContainer {
     private Drivetrain drivetrainSubsystem = new Drivetrain();
     private IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private Shooter shooterSubsystem = new Shooter();
+    private TrajectoryLoader loader = new TrajectoryLoader();
     private final XboxController driverController = new XboxController(0);
     private final XboxController codriverController = new XboxController(1);
+
+    private Trajectory trajectory = loader.loadTrajectory(); //Pathweaver Trajectory
 
     public RobotContainer(){
         drivetrainSubsystem.setDefaultCommand(new DriveJoystickCmd(drivetrainSubsystem, 
@@ -52,6 +56,7 @@ public class RobotContainer {
 
     //AUTO DRIVETRAIN
     public Command getAutonomousCommand() {
+        /*
         TrajectoryConfig config = new TrajectoryConfig(
             Units.feetToMeters(2.0), Units.feetToMeters(2.0));
         config.setKinematics(drivetrainSubsystem.getKinematics());
@@ -60,8 +65,9 @@ public class RobotContainer {
             Arrays.asList(new Pose2d(), new Pose2d(1.0, 0, new Rotation2d()),
                 new Pose2d(0, 1.2, Rotation2d.fromDegrees(90.0))),
             config
-        );
-    
+        );*/
+
+
         RamseteCommand command = new RamseteCommand(
             trajectory,
             drivetrainSubsystem::getPose,
